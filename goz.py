@@ -1,6 +1,4 @@
-import numpy
 import random
-
 import globals
 
 CELLS_WIDTH = 80
@@ -62,7 +60,7 @@ class GameOfZombie:
     #
     def __init__(self):
         self.cellIndex = 0
-        self.cells = numpy.empty((CELLS_WIDTH, CELLS_HEIGHT, 2), dtype=object)
+        self.cells = [[[globals.EMPTY_COLOR for x in range(CELLS_WIDTH)] for x in range(CELLS_HEIGHT)] for x in range(2)]
 
     # Seed cells function
     #   1. Set the cell index to 0
@@ -71,12 +69,12 @@ class GameOfZombie:
     #
     def seedCells(self):
         self.cellIndex = 0
-        self.cells.fill(globals.EMPTY_COLOR)
+        self.cells = [[[globals.EMPTY_COLOR for x in range(CELLS_WIDTH)] for x in range(CELLS_HEIGHT)] for x in range(2)]
 
-        for x in range(0, CELLS_WIDTH):
-            for y in range(0, CELLS_HEIGHT):
+        for y in range(0, CELLS_HEIGHT):
+            for x in range(0, CELLS_WIDTH):
                 if random.randint(1,100) > ODDS_OF_PERSON:
-                    self.cells[x,y, self.cellIndex] = globals.PEOPLE_COLORS[random.randrange(0, len(globals.PEOPLE_COLORS))]
+                    self.cells[self.cellIndex][y][x] = globals.PEOPLE_COLORS[random.randrange(0, len(globals.PEOPLE_COLORS))]
 
     # Update cells function
     #   1. Set a variable "nextCellIndex" to 0 if cellIndex was 1 and 1 if cellIndex was 0 (to flip between the two)
@@ -100,8 +98,8 @@ class GameOfZombie:
         self.cleanCells(nextCellIndex)
 
         # Iterate through all the Cells in the current cell page index
-        for x in range(0, CELLS_WIDTH):
-            for y in range(0, CELLS_HEIGHT):
+        for y in range(0, CELLS_HEIGHT):
+            for x in range(0, CELLS_WIDTH):
                 
                 numNeighbours = 0
                 numZombieNeighbours = 0
@@ -120,11 +118,11 @@ class GameOfZombie:
                             if col >= 0 and col < CELLS_WIDTH and row >= 0 and row < CELLS_HEIGHT:
 
                                 # Anything other than EMPTY counts as a neighbor
-                                if self.cells[col, row, self.cellIndex] != globals.EMPTY_COLOR:
+                                if self.cells[self.cellIndex][row][col] != globals.EMPTY_COLOR:
                                     numNeighbours += 1            
 
                                 # Any Zombie counts as a Zombie Neighbor
-                                if self.cells[col, row, self.cellIndex] == globals.ZOMBIE_COLOR:
+                                if self.cells[self.cellIndex][row][col]== globals.ZOMBIE_COLOR:
                                     numZombieNeighbours += 1
 
                                     # Any Zombie behind the fence counts as an Invader Zombie
@@ -132,14 +130,14 @@ class GameOfZombie:
                                         numZombieInvaders += 1
                 
 
-                currentColor = self.cells[x,y, self.cellIndex] 
+                currentColor = self.cells[self.cellIndex][y][x]
                 _isBehindFence = isBehindFence( self.screenX(x), self.screenY(y))
                 
                 if currentColor == globals.EMPTY_COLOR:
                     if numNeighbours == 3:
-                        self.cells[x,y, nextCellIndex] = globals.PEOPLE_COLORS[random.randrange(0, len(globals.PEOPLE_COLORS))]
+                        self.cells[nextCellIndex][y][x] = globals.PEOPLE_COLORS[random.randrange(0, len(globals.PEOPLE_COLORS))]
                     else:
-                        self.cells[x,y, nextCellIndex] = globals.EMPTY_COLOR
+                        self.cells[nextCellIndex][y][x] = globals.EMPTY_COLOR
                 else:
                     if  isInfected( self.screenX(x), self.screenY(y) ) \
                         or \
@@ -149,13 +147,13 @@ class GameOfZombie:
                         or \
                         (not _isBehindFence and numZombieNeighbours > 0) :
                     
-                        self.cells[x,y, nextCellIndex] = globals.ZOMBIE_COLOR
+                        self.cells[nextCellIndex][y][x] = globals.ZOMBIE_COLOR
                     
                     elif numNeighbours < 2 or numNeighbours > 3:
-                        self.cells[x,y, nextCellIndex] = globals.EMPTY_COLOR
+                        self.cells[nextCellIndex][y][x] = globals.EMPTY_COLOR
                     
                     else:
-                        self.cells[x,y, nextCellIndex] = self.cells[x,y, self.cellIndex]
+                        self.cells[nextCellIndex][y][x] = self.cells[self.cellIndex][y][x]
                     
         self.cellIndex = nextCellIndex        
 
@@ -164,9 +162,9 @@ class GameOfZombie:
     #   2. Set their color to EMPTY
     #
     def cleanCells(self, index):
-        for x in range(0, CELLS_WIDTH):
-            for y in range(0, CELLS_HEIGHT):
-                self.cells[x,y, index] = globals.EMPTY_COLOR
+        for y in range(0, CELLS_HEIGHT):
+            for x in range(0, CELLS_WIDTH):
+                self.cells[index][y][x] = globals.EMPTY_COLOR
     
     # "Get the Screen X coordinate for a given Cell grid X value" function
     #   Return the value of multiplying the grid X times the Cell size and then adding the cell margin offset
@@ -189,6 +187,6 @@ class GameOfZombie:
 
         for x in range(0, CELLS_WIDTH):
             for y in range(0, CELLS_HEIGHT):
-                color = self.cells[x,y, self.cellIndex]
+                color = self.cells[self.cellIndex][y][x]
                 if color != globals.EMPTY_COLOR:
                     draw( color, self.screenX(x), self.screenY(y), CELL_SIZE )
